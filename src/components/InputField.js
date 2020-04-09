@@ -231,7 +231,7 @@ export default function Input({ leftIcon, rightIcon, maxSearchListHeight, placeh
     <InputContainer ref={selfRef}>
       {leftIcon && typeof leftIcon === 'string' && <InputIcon src={leftIcon} onClick={handlePlaceholderClick} />}
       {placeholder && <InputPlaceholder in={focus || (inputFieldRef.current && inputFieldRef.current.value) ? 0 : 1} onClick={handlePlaceholderClick}>{placeholder}</InputPlaceholder>}
-      <InputField ref={inputFieldRef} {...props} onChange={handleInputFieldOnChange} onFocus={handleInputFieldFocusStart} onBlur={handleInputFieldFocusEnd} />
+      <InputField ref={inputFieldRef} placeholder={focus ? 'Type to search...' : ''} {...props} onChange={handleInputFieldOnChange} onFocus={handleInputFieldFocusStart} onBlur={handleInputFieldFocusEnd} />
       {rightIcon && typeof leftIcon === 'string' && <InputIcon src={rightIcon} position='right' onClick={handlePlaceholderClick} />}
       <InputSearchListContainer onMouseOver={handleListContainerMouseOver} onMouseLeave={handleListContainerMouseLeave} ref={listRef} upwards={upwards ? 1 : 0} isOpen={isOpen ? 1 : 0} maxListHeight={listHeight} minWidth={selfRef.current ? selfRef.current.clientWidth : null}>
         <InputSearchList>
