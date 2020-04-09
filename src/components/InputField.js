@@ -14,6 +14,10 @@ const InputIcon = styled.img`
   && {
     width: 1rem;
   }
+  /* Could not change the svg color so i used a helper to create the filter for the color 
+    ref: https://codepen.io/sosuke/pen/Pjoqqp
+  */
+  filter: invert(58%) sepia(5%) saturate(1366%) hue-rotate(174deg) brightness(89%) contrast(85%);
   position: absolute;
   top: 2rem;
   ${props => (props.position && props.position === 'right') ? css`
@@ -225,10 +229,10 @@ export default function Input({ leftIcon, rightIcon, maxSearchListHeight, placeh
 
   return (
     <InputContainer ref={selfRef}>
-      {leftIcon && <InputIcon src={typeof leftIcon === 'string' ? leftIcon : ''} />}
+      {leftIcon && typeof leftIcon === 'string' && <InputIcon src={leftIcon} onClick={handlePlaceholderClick} />}
       {placeholder && <InputPlaceholder in={focus || (inputFieldRef.current && inputFieldRef.current.value) ? 0 : 1} onClick={handlePlaceholderClick}>{placeholder}</InputPlaceholder>}
       <InputField ref={inputFieldRef} {...props} onChange={handleInputFieldOnChange} onFocus={handleInputFieldFocusStart} onBlur={handleInputFieldFocusEnd} />
-      {rightIcon && <InputIcon src={typeof rightIcon === 'string' ? rightIcon : ''} position='right' />}
+      {rightIcon && typeof leftIcon === 'string' && <InputIcon src={rightIcon} position='right' onClick={handlePlaceholderClick} />}
       <InputSearchListContainer onMouseOver={handleListContainerMouseOver} onMouseLeave={handleListContainerMouseLeave} ref={listRef} upwards={upwards ? 1 : 0} isOpen={isOpen ? 1 : 0} maxListHeight={listHeight} minWidth={selfRef.current ? selfRef.current.clientWidth : null}>
         <InputSearchList>
           {
