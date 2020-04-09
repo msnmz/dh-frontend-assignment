@@ -28,7 +28,7 @@ const InputPlaceholder = styled.span.attrs(props => ({
 }))`
   color: #798697;
   position: absolute;
-  transition: all 0.5s;
+  transition: all 0.25s;
   ${props => props.in ? css`
     top: 2rem;
     left: 2rem;
@@ -84,18 +84,26 @@ const InputSearchList = styled.ul`
   margin: 0;
   list-style-type: none;
   background: #FFFFFF;
-
-  & li {
-    padding: 0 3rem 0 1rem;
-    font-size: 1rem;
-    color: #798697;
-    line-height: 30px;
-  }
-
+  
   & li:hover {
     color: #4A4A4A;
     background: #F7F7F7;
   }
+`
+
+const InputSearchListItem = styled.li.attrs(props => ({
+  matching: props.matching || 0
+}))`
+  padding: 0 3rem 0 1rem;
+  font-size: 1rem;
+  color: #798697;
+  line-height: 30px;
+  cursor: pointer;
+
+  ${props => props.matching && css`
+    color: #4A4A4A;
+    background: #F7F7F7;
+  `}
 `
 
 const NAMES = [
@@ -128,9 +136,13 @@ export default function Input({ leftIcon, rightIcon, maxSearchListHeight, placeh
     );
   const [upwards, setUpwards] = useState(false);
   const [isOpen, setIsOpen] = useState(focus);
+  const [searchText, setSearchText] = useState('');
+  const [searchIndex, setSearchIndex] = useState(null);
+  const [isHoveringList, setIsHoveringList] = useState(false);
 
   const inputFieldRef = useRef();
   const selfRef = useRef();
+  const listRef = useRef();
 
   const handleInputFieldFocusStart = (e) => {
     open();
@@ -138,13 +150,32 @@ export default function Input({ leftIcon, rightIcon, maxSearchListHeight, placeh
   }
 
   const handleInputFieldFocusEnd = (e) => {
-    close();
+    !isHoveringList && close();
     props.onBlur && props.onBlur(e);
   }
 
   const handlePlaceholderClick = (e) => {
     open();
     props.onClick && props.onClick();
+  }
+
+  const handleInputFieldOnChange = (e) => {
+    setSearchText(e.target.value);
+    props.onChange && props.onChange(e);
+  }
+
+  const handleListItemClick = (p) => {
+    inputFieldRef.current.value = p.name;
+    setSearchText(p.name);
+    close();
+  }
+
+  const handleListContainerMouseOver = (e) => {
+    !isHoveringList && setIsHoveringList(true);
+  }
+
+  const handleListContainerMouseLeave = (e) => {
+    isHoveringList && setIsHoveringList(false);
   }
 
   const open = () => {
@@ -160,33 +191,48 @@ export default function Input({ leftIcon, rightIcon, maxSearchListHeight, placeh
 
   useEffect(() => {
     const setOpenDirection = () => {
-      if (!selfRef.current) return
-      console.log('have ref');
+      if (!selfRef.current) return;
+
       const dropdownRect = selfRef.current.getBoundingClientRect();
-      console.log({ dropdownRect })
       const menuHeight = listHeight;
       const spaceAtTheBottom =
         document.documentElement.clientHeight - dropdownRect.top - dropdownRect.height - menuHeight;
       const spaceAtTheTop = dropdownRect.top - menuHeight;
-      console.log({ spaceAtTheBottom, spaceAtTheTop });
       const upward = spaceAtTheBottom < 0 && spaceAtTheTop > spaceAtTheBottom
-      console.log({ upward });
-      // set state only if there's a relevant difference
+
       if (upward !== upwards) setUpwards(upward);
     }
     setOpenDirection();
   }, [focus]);
 
+  useEffect(() => {
+    if (!listRef.current || !searchText) {
+      setSearchIndex(null);
+      return;
+    }
+    // Find first matching element
+    const index = NAMES.findIndex(p => p.name && p.name.toLowerCase().startsWith(searchText.toLowerCase()));
+    if (index === -1) {
+      setSearchIndex(null);
+      return;
+    }
+
+    // Calculate the offset
+    const offset = index * 30 - listHeight / 2;
+    setSearchIndex(index);
+    listRef.current.scrollTop = offset;
+  }, [searchText]);
+
   return (
     <InputContainer ref={selfRef}>
       {leftIcon && <InputIcon src={typeof leftIcon === 'string' ? leftIcon : ''} />}
       {placeholder && <InputPlaceholder in={focus || (inputFieldRef.current && inputFieldRef.current.value) ? 0 : 1} onClick={handlePlaceholderClick}>{placeholder}</InputPlaceholder>}
-      <InputField ref={inputFieldRef} {...props} onFocus={handleInputFieldFocusStart} onBlur={handleInputFieldFocusEnd} />
+      <InputField ref={inputFieldRef} {...props} onChange={handleInputFieldOnChange} onFocus={handleInputFieldFocusStart} onBlur={handleInputFieldFocusEnd} />
       {rightIcon && <InputIcon src={typeof rightIcon === 'string' ? rightIcon : ''} position='right' />}
-      <InputSearchListContainer upwards={upwards ? 1 : 0} isOpen={isOpen ? 1 : 0} maxListHeight={listHeight} minWidth={selfRef.current ? selfRef.current.clientWidth : null}>
+      <InputSearchListContainer onMouseOver={handleListContainerMouseOver} onMouseLeave={handleListContainerMouseLeave} ref={listRef} upwards={upwards ? 1 : 0} isOpen={isOpen ? 1 : 0} maxListHeight={listHeight} minWidth={selfRef.current ? selfRef.current.clientWidth : null}>
         <InputSearchList>
           {
-            NAMES.map((p, i) => <li key={`${p.name}_${i}`}>{p.name}</li>)
+            NAMES.map((p, i) => <InputSearchListItem onClick={() => handleListItemClick(p)} matching={searchIndex && searchIndex === i ? 1 : 0} key={`${p.name}_${i}`}>{p.name}</InputSearchListItem>)
           }
         </InputSearchList>
       </InputSearchListContainer>

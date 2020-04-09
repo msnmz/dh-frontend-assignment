@@ -4,7 +4,6 @@ import InputField from "./components/InputField";
 const App = () => {
   return (
     <>
-      <div style={{ height: '1000px' }}></div>
       <div><InputField placeholder='Contact' leftIcon /></div>
       <div>
         Have a look at the readme.md file for what is expected. And as always:
