@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styled, { css } from "styled-components";
 
 const MAX_LIST_HEIGHT = 200;
@@ -63,9 +63,10 @@ const InputField = styled.input`
 
 const InputSearchListContainer = styled.div.attrs(props => ({
   maxListHeight: props.maxListHeight || MAX_LIST_HEIGHT,
-  minWidth: props.minWidth ? props.minWidth : 200
+  minWidth: props.minWidth ? props.minWidth : 200,
+  isOpen: props.isOpen || 0
 }))`
-  display: inline-block;  
+  display: ${props => props.isOpen ? 'inline-block' : 'none'};  
   max-height: ${props => props.maxListHeight + 'px'};
   min-width: ${props => props.minWidth + 'px'};
   overflow-y: scroll;
@@ -121,40 +122,54 @@ export default function Input({ leftIcon, rightIcon, maxSearchListHeight, placeh
   const [listHeight, setListHeight] =
     useState(maxSearchListHeight && (maxSearchListHeight > MAX_LIST_HEIGHT) ? MAX_LIST_HEIGHT : maxSearchListHeight);
   const [upwards, setUpwards] = useState(false);
+  const [isOpen, setIsOpen] = useState(focus);
 
   const inputFieldRef = useRef();
   const selfRef = useRef();
 
   const handleInputFieldFocusStart = (e) => {
-    setFocus(true);
+    open();
     props.onFocus && props.onFocus(e);
   }
 
   const handleInputFieldFocusEnd = (e) => {
-    setFocus(false);
+    close();
     props.onBlur && props.onBlur(e);
   }
 
   const handlePlaceholderClick = (e) => {
-    setFocus(true);
-    inputFieldRef.current.focus();
+    open();
     props.onClick && props.onClick();
   }
 
-  const setOpenDirection = () => {
-    if (!selfRef.current) return
-
-    const dropdownRect = selfRef.current.getBoundingClientRect();
-    const menuHeight = searchListHeight;
-    const spaceAtTheBottom =
-      document.documentElement.clientHeight - dropdownRect.top - dropdownRect.height - menuHeight
-    const spaceAtTheTop = dropdownRect.top - menuHeight
-
-    const upward = spaceAtTheBottom < 0 && spaceAtTheTop > spaceAtTheBottom
-
-    // set state only if there's a relevant difference
-    if (upward && !upwards) setUpwards(upward);
+  const open = () => {
+    setFocus(true);
+    inputFieldRef.current.focus();
+    setIsOpen(true);
   }
+
+  const close = () => {
+    setFocus(false);
+    setIsOpen(false);
+  }
+
+  useEffect(() => {
+    const setOpenDirection = () => {
+      if (!selfRef.current) return
+
+      const dropdownRect = selfRef.current.getBoundingClientRect();
+      const menuHeight = listHeight;
+      const spaceAtTheBottom =
+        document.documentElement.clientHeight - dropdownRect.top - dropdownRect.height - menuHeight
+      const spaceAtTheTop = dropdownRect.top - menuHeight
+
+      const upward = spaceAtTheBottom < 0 && spaceAtTheTop > spaceAtTheBottom
+
+      // set state only if there's a relevant difference
+      if (upward && !upwards) setUpwards(upward);
+    }
+    setOpenDirection();
+  }, [focus]);
 
   return (
     <InputContainer ref={selfRef}>
@@ -162,7 +177,7 @@ export default function Input({ leftIcon, rightIcon, maxSearchListHeight, placeh
       {placeholder && <InputPlaceholder in={focus || (inputFieldRef.current && inputFieldRef.current.value) ? 0 : 1} onClick={handlePlaceholderClick}>{placeholder}</InputPlaceholder>}
       <InputField ref={inputFieldRef} {...props} onFocus={handleInputFieldFocusStart} onBlur={handleInputFieldFocusEnd} />
       {rightIcon && <InputIcon src={typeof rightIcon === 'string' ? rightIcon : ''} position='right' />}
-      <InputSearchListContainer maxListHeight={listHeight} minWidth={selfRef.current ? selfRef.current.clientWidth : null}>
+      <InputSearchListContainer isOpen={isOpen ? 1 : 0} maxListHeight={listHeight} minWidth={selfRef.current ? selfRef.current.clientWidth : null}>
         <InputSearchList>
           {
             NAMES.map((p, i) => <li key={`${p.name}_${i}`}>{p.name}</li>)
