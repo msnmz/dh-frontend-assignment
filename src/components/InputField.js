@@ -64,7 +64,8 @@ const InputField = styled.input`
 const InputSearchListContainer = styled.div.attrs(props => ({
   maxListHeight: props.maxListHeight || MAX_LIST_HEIGHT,
   minWidth: props.minWidth ? props.minWidth : 200,
-  isOpen: props.isOpen || 0
+  isOpen: props.isOpen || 0,
+  upwards: props.upwards || 0
 }))`
   display: ${props => props.isOpen ? 'inline-block' : 'none'};  
   max-height: ${props => props.maxListHeight + 'px'};
@@ -74,7 +75,7 @@ const InputSearchListContainer = styled.div.attrs(props => ({
   border: 1px solid #BFC5CD;
   border-radius: 5px;
   position: absolute;
-  top: 4.5rem;
+  top: ${props => props.upwards ? ('-' + props.maxListHeight + 'px') : '4.5rem'};
   left 0;
 `
 
@@ -120,7 +121,11 @@ const NAMES = [
 export default function Input({ leftIcon, rightIcon, maxSearchListHeight, placeholder, ...props }) {
   const [focus, setFocus] = useState(false);
   const [listHeight, setListHeight] =
-    useState(maxSearchListHeight && (maxSearchListHeight > MAX_LIST_HEIGHT) ? MAX_LIST_HEIGHT : maxSearchListHeight);
+    useState(
+      maxSearchListHeight ?
+        ((maxSearchListHeight > MAX_LIST_HEIGHT) ? MAX_LIST_HEIGHT : maxSearchListHeight)
+        : MAX_LIST_HEIGHT
+    );
   const [upwards, setUpwards] = useState(false);
   const [isOpen, setIsOpen] = useState(focus);
 
@@ -156,17 +161,18 @@ export default function Input({ leftIcon, rightIcon, maxSearchListHeight, placeh
   useEffect(() => {
     const setOpenDirection = () => {
       if (!selfRef.current) return
-
+      console.log('have ref');
       const dropdownRect = selfRef.current.getBoundingClientRect();
+      console.log({ dropdownRect })
       const menuHeight = listHeight;
       const spaceAtTheBottom =
-        document.documentElement.clientHeight - dropdownRect.top - dropdownRect.height - menuHeight
-      const spaceAtTheTop = dropdownRect.top - menuHeight
-
+        document.documentElement.clientHeight - dropdownRect.top - dropdownRect.height - menuHeight;
+      const spaceAtTheTop = dropdownRect.top - menuHeight;
+      console.log({ spaceAtTheBottom, spaceAtTheTop });
       const upward = spaceAtTheBottom < 0 && spaceAtTheTop > spaceAtTheBottom
-
+      console.log({ upward });
       // set state only if there's a relevant difference
-      if (upward && !upwards) setUpwards(upward);
+      if (upward !== upwards) setUpwards(upward);
     }
     setOpenDirection();
   }, [focus]);
@@ -177,7 +183,7 @@ export default function Input({ leftIcon, rightIcon, maxSearchListHeight, placeh
       {placeholder && <InputPlaceholder in={focus || (inputFieldRef.current && inputFieldRef.current.value) ? 0 : 1} onClick={handlePlaceholderClick}>{placeholder}</InputPlaceholder>}
       <InputField ref={inputFieldRef} {...props} onFocus={handleInputFieldFocusStart} onBlur={handleInputFieldFocusEnd} />
       {rightIcon && <InputIcon src={typeof rightIcon === 'string' ? rightIcon : ''} position='right' />}
-      <InputSearchListContainer isOpen={isOpen ? 1 : 0} maxListHeight={listHeight} minWidth={selfRef.current ? selfRef.current.clientWidth : null}>
+      <InputSearchListContainer upwards={upwards ? 1 : 0} isOpen={isOpen ? 1 : 0} maxListHeight={listHeight} minWidth={selfRef.current ? selfRef.current.clientWidth : null}>
         <InputSearchList>
           {
             NAMES.map((p, i) => <li key={`${p.name}_${i}`}>{p.name}</li>)
